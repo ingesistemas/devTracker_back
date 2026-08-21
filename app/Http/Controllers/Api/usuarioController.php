@@ -27,7 +27,7 @@ class usuarioController extends Controller
             $id_empresa = $request->id_empresa;
 
             $usuarios = usuarioModel::with(['empresa:id,nombre,email,activo','rol:id,rol'])
-            ->select('id', 'email', 'activo', 'id_empresa', 'id_rol')
+            ->select('id', 'email', 'nombre', 'activo', 'id_empresa', 'id_rol')
             ->where('id_empresa', $id_empresa)->get();
 
             if ($usuarios->isNotEmpty()) {
@@ -157,6 +157,7 @@ class usuarioController extends Controller
             $id_empresa = $request->id_empresa;
             $email = $request->email;
             $id_rol = $request->id_rol;
+            $nombre = $request->nombre;
             $contrasena = Hash::make($request->contrasena);
 
             $busqueda = usuarioModel::with(['empresa:id,nombre,email,activo','rol:id,rol'])
@@ -174,6 +175,7 @@ class usuarioController extends Controller
 
             $usuario = usuarioModel::create([
                 'email' => $email,
+                'nombre' => $nombre,
                 'id_rol' => $id_rol,
                 'contrasena' => $contrasena,
                 'id_empresa' => $id_empresa,
@@ -269,7 +271,7 @@ class usuarioController extends Controller
         try {
             $id_empresa = $request->id_empresa;
             $id = $request->id;
-            $usuario = usuarioModel::select('id', 'email', 'activo', 'id_empresa')
+            $usuario = usuarioModel::select('id', 'email', 'nombre', 'activo', 'id_empresa')
             ->where('id_empresa', $id_empresa)
             ->where('id', $id)->first();
 

@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Api\epicaController;
+use App\Http\Controllers\Api\proyectoController;
 use App\Http\Controllers\Api\rolController;
 use App\Http\Controllers\Api\usuarioController;
 use Illuminate\Support\Facades\Route;
@@ -41,6 +43,20 @@ Route::middleware('jwt')->group(function () {
         Route::post('/usuarios/editar-credenciales', [ UsuarioController::class,'editarCredenciales']);
         Route::post('/usuarios/consultar-personales', [ UsuarioController::class,'consultarPersonales']);
         Route::post('/usuarios/editar-personales', [ UsuarioController::class,'editarPersonales']);
+
+        Route::prefix('epicas')->group(function () {
+            Route::get('/consultar', [epicaController::class, 'consultar']);
+            Route::post('/crear', [epicaController::class, 'crear']);
+           /*  Route::get('/consultar', [rolController::class, 'consultar']);
+            Route::post('/crear', [rolController::class, 'crear']); */
+        });
+
+        Route::prefix('proyectos')->group(function () {
+            Route::get('/consultar', [proyectoController::class, 'consultar']);
+            Route::post('/crear', [proyectoController::class, 'crear']); 
+            Route::post('/editar', [proyectoController::class, 'editar']); 
+            Route::post('/estado', [proyectoController::class, 'estado']); 
+        });
         
         
     });

@@ -15,6 +15,7 @@ class usuarioModel extends Model implements JWTSubject
     protected $fillable = [
         'rol',
         'email',
+        'nombre',
         'contrasena',
         'id_empresa',
         'id_rol',
@@ -47,5 +48,22 @@ class usuarioModel extends Model implements JWTSubject
     public function rol()
     {
         return $this->belongsTo(rolModel::class, 'id_rol', 'id');
+    }
+
+    public function proyectos()
+    {
+        return $this->hasMany(proyectoModel::class, 'id_usuario', 'id');
+    }
+
+    // Épicas creadas por este usuario
+    public function epicasCreadas()
+    {
+        return $this->hasMany(EpicaModel::class, 'id_usu_creo', 'id');
+    }
+
+    // Épicas asignadas a este usuario
+    public function epicasAsignadas()
+    {
+        return $this->hasMany(EpicaModel::class, 'id_usu_asig', 'id');
     }
 }

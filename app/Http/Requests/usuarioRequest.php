@@ -26,6 +26,7 @@ class usuarioRequest extends FormRequest
     {
         return [
             'email' => 'required|email',
+            'nombre' => 'required',
             'contrasena' => 'required|min:6',
             'id_rol' => 'required|integer|exists:mysql.roles,id',
             'id_empresa' => 'required|integer|exists:mysql.roles,id'
@@ -37,6 +38,7 @@ class usuarioRequest extends FormRequest
         return [
             'email.required' => 'El correo es obligatorio.',
             'email.email' => 'El correo no tiene un formato válido.',
+            'nombre.required' => 'Falta ingresar el nombre del usuario.',
             'contrasena.required' => 'La contraseña es obligatoria.',
             'contrasena.min' => 'La contraseña debe tener al menos 6 caracteres.',
             'id_rol.required' => 'El rol es obligatorio.',

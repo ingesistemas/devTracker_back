@@ -1,0 +1,61 @@
+<?php
+
+namespace App\Http\Requests;
+
+use Illuminate\Contracts\Validation\ValidationRule;
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Http\Exceptions\HttpResponseException;
+
+class EpicaRequestCreate extends FormRequest
+{
+    /**
+     * Determine if the user is authorized to make this request.
+     */
+    public function authorize(): bool
+    {
+        return true;
+    }
+
+    /**
+     * Get the validation rules that apply to the request.
+     *
+     * @return array<string, ValidationRule|array<mixed>|string>
+     */
+    public function rules(): array
+    {
+        return [
+            'nombre' => 'required',
+            'detalle' => 'required',
+            'id_proyecto' => 'required|integer|exists:empresa_dinamica.proyectos,id',
+            'id_usu_creo' => 'required|integer|exists:mysql.usuarios,id',
+            'id_usu_asig'  => 'required|integer|exists:mysql.usuarios,id',
+            'id_prioridad'  => 'required|integer'
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'nombre.required' => 'Falta ingresar el nombre de la épica.',
+            'detalle.required' => 'Falta describir el detalle de la épica.',
+            'id_proyecto.required' => 'Falta señalar el proyecto al que se relaciona la épica.',
+            'id_proyecto.exists' => 'El proyecto no se encuentra registrado en el sistema.',
+            'id_usu_creo.exists' => 'El usuario no se encuentra registrado en el sistema.',
+            'id_usu_creo.required' => 'Falta señalar el usuario quién crea la épica.',
+            'id_usu_asig.exists' => 'El usuario a quién asigna la épica, no se encuentra registrado en el sistema.',
+            'id_usu_asig.required' => 'Falta señalar el usuario a quién le asigna la épica.',
+            'id_prioridad' => 'Falta indicar el tipo de prioridad que tiene la épica o requerimiento.'
+        ];
+    }
+
+    protected function failedValidation(Validator $validator)
+    {
+        throw new HttpResponseException(
+            response()->json([
+                'error' => true,
+                'errores' => $validator->errors()
+            ], 200)
+        );
+    }
+}

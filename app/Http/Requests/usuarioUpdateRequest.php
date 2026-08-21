@@ -26,6 +26,7 @@ class usuarioUpdateRequest extends FormRequest
     {
         return [
             'email' => 'required|email',
+            'nombre' => 'required',
             'id_rol' => 'required|integer|exists:mysql.roles,id'
         ];
     }
@@ -36,7 +37,8 @@ class usuarioUpdateRequest extends FormRequest
             'email.required' => 'El correo es obligatorio.',
             'email.email' => 'El correo no tiene un formato válido.',
             'id_rol.required' => 'El rol es obligatorio.',
-            'id_rol.exists' => 'El rol seleccionado no existe.'
+            'id_rol.exists' => 'El rol seleccionado no existe.',
+            'nombre.required' => 'Falta ingresar el nombre del usuario.'
         ];
     }
 

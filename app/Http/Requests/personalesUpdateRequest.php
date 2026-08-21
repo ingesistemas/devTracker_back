@@ -25,7 +25,8 @@ class personalesUpdateRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => 'required|email'
+            'email' => 'required|email',
+            'nombre' => 'required'
         ];
     }
 
@@ -33,7 +34,8 @@ class personalesUpdateRequest extends FormRequest
     {
         return [
             'email.required' => 'El correo es obligatorio.',
-            'email.email' => 'El correo no tiene un formato válido.'
+            'email.email' => 'El correo no tiene un formato válido.',
+            'nombre.required' => 'Falta ingresar el nombre del usuario.',
         ];
     }
 
