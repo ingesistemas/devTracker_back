@@ -7,7 +7,7 @@ use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 
-class empresaModel extends Model implements JWTSubject
+class EmpresaModel extends Model implements JWTSubject
 {
     use LogsActivity;
     protected $table = 'empresas';

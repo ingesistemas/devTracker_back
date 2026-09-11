@@ -7,7 +7,7 @@ use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 
-class usuarioModel extends Model implements JWTSubject
+class UsuarioModel extends Model implements JWTSubject
 {
     use LogsActivity;
     protected $table = 'usuarios';
@@ -19,6 +19,9 @@ class usuarioModel extends Model implements JWTSubject
         'contrasena',
         'id_empresa',
         'id_rol',
+        'id_grupo_trabajo',
+        'id_epica',
+        'id_tarea',
         'activo',
         'created_at'
     ];
@@ -36,7 +39,7 @@ class usuarioModel extends Model implements JWTSubject
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-        ->logOnly(['email', 'contrasena', 'id_empresa', 'activo'])
+        ->logOnly(['email', 'contrasena', 'id_empresa', 'id_grupo_trabajo', 'activo'])
         ->logOnlyDirty();
     }
 
@@ -49,6 +52,12 @@ class usuarioModel extends Model implements JWTSubject
     {
         return $this->belongsTo(rolModel::class, 'id_rol', 'id');
     }
+
+    public function grupoTrabajo()
+    {
+        return $this->belongsTo(grupoTrabajoModel::class, 'id_grupo_trabajo', 'id');
+    }
+
 
     public function proyectos()
     {
@@ -65,5 +74,21 @@ class usuarioModel extends Model implements JWTSubject
     public function epicasAsignadas()
     {
         return $this->hasMany(EpicaModel::class, 'id_usu_asig', 'id');
+    }
+
+    /**
+     * Épica activa vinculada al usuario
+     */
+    public function epicaActiva()
+    {
+        return $this->belongsTo(EpicaModel::class, 'id_epica', 'id');
+    }
+
+    /**
+     * Tarea activa vinculada al usuario
+     */
+    public function tareaActiva()
+    {
+        return $this->belongsTo(TareaModel::class, 'id_tarea', 'id');
     }
 }

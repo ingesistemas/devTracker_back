@@ -3,18 +3,18 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\loginRequest;
-use App\Http\Requests\proyectoRequest;
-use App\Models\empresaModel;
-use App\Models\proyectoModel;
-use App\Models\rolModel;
-use App\Models\usuarioModel;
+/* use App\Http\Requests\loginRequest;
+ */use App\Http\Requests\ProyectoRequest;
+/* use App\Models\empresaModel; */
+use App\Models\ProyectoModel;
+/* use App\Models\rolModel;
+use App\Models\usuarioModel; */
 use Exception;
 use Illuminate\Http\Request;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Illuminate\Support\Facades\Validator;
 
-class proyectoController extends Controller
+class ProyectoController extends Controller
 {
     protected $mensaje = "";
     protected $error = false;
@@ -42,7 +42,7 @@ class proyectoController extends Controller
         } catch (Exception $e) {
             return response()->json([
                 'error' => true,
-                'mensaje' => 'Error' . $e,
+                'mensaje' => 'Error' . $e->getMessage(),
                 'data' => []
             ]);
         }
@@ -79,7 +79,7 @@ class proyectoController extends Controller
         }catch (Exception $e) {
             return response()->json([
                 'error' => true,
-                'mensaje' => 'Error' . $e,
+                'mensaje' => 'Error' . $e->getMessage(),
                 'data' => []
             ]);
         }
@@ -101,12 +101,12 @@ class proyectoController extends Controller
     }
         try{
            
-
             $id = $request->id;
+            $proyecto = proyectoModel::find($request->id);
 
-            $proyecto = proyectoModel::with(['usuario:id,email,id_rol','usuario.rol:id,rol'])
+            /* $proyecto = proyectoModel::with(['usuario:id,email,id_rol','usuario.rol:id,rol'])
             ->select('id', 'proyecto', 'activo')
-            ->where('id', $id)->first();
+            ->where('id', $id)->first(); */
 
 
             if (!$proyecto) {
@@ -127,7 +127,7 @@ class proyectoController extends Controller
         }catch (Exception $e) {
             return response()->json([
                 'error' => true,
-                'mensaje' => 'Error' . $e,
+                'mensaje' => 'Error' . $e->getMessage(),
                 'data' => []
             ]);
         }
@@ -157,7 +157,7 @@ class proyectoController extends Controller
         } catch (Exception $e) {
             return response()->json([
                 'error' => true,
-                'mensaje' => 'Error' . $e,
+                'mensaje' => 'Error' . $e->getMessage(),
                 'data' => []
             ]);
         }

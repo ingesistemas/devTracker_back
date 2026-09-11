@@ -7,7 +7,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
-class usuarioRequest extends FormRequest
+class UsuarioRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -29,6 +29,7 @@ class usuarioRequest extends FormRequest
             'nombre' => 'required',
             'contrasena' => 'required|min:6',
             'id_rol' => 'required|integer|exists:mysql.roles,id',
+            'id_grupo_trabajo' => 'required|integer|exists:empresa_dinamica.grupos_trabajos,id',
             'id_empresa' => 'required|integer|exists:mysql.roles,id'
         ];
     }
@@ -44,7 +45,10 @@ class usuarioRequest extends FormRequest
             'id_rol.required' => 'El rol es obligatorio.',
             'id_rol.exists' => 'El rol seleccionado no existe.',
             'id_empresa.required' => 'Para crear un usuario, se necesita el ID de la empresa relacionada.',
-            'id_empresa.exists' => 'El ID de la empresa relacionada no existe.'
+            'id_empresa.exists' => 'El ID de la empresa relacionada no existe.',
+            'id_grupo_trabajo.required' => 'Falta señalar a que grupo de trabajo pertenece el usuario.',
+            'id_grupo_trabajo.exists' => 'El grupo de trabajo no se encuentra registrado en el sistema.',
+            'id_grupo_trabajo.integer' => 'El ID del grupo de trabajo debe ser numérico.' 
         ];
     }
 

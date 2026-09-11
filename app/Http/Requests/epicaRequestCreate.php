@@ -30,8 +30,11 @@ class EpicaRequestCreate extends FormRequest
             'id_proyecto' => 'required|integer|exists:empresa_dinamica.proyectos,id',
             'id_usu_creo' => 'required|integer|exists:mysql.usuarios,id',
             'id_usu_asig'  => 'required|integer|exists:mysql.usuarios,id',
-            'id_prioridad'  => 'required|integer'
+            'id_prioridad'  => 'required|integer',
+            'archivo_pdf'   => 'nullable|file|mimes:pdf|max:10240',
+            'archivo_video'   => 'nullable|file|mimes:mp4,mov,avi,wmv,webm,mkv,flv,3gp|max:102400',
         ];
+        
     }
 
     public function messages(): array

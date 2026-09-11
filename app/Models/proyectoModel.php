@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class proyectoModel extends Model
+class ProyectoModel extends Model
 {
     protected $table = 'proyectos';
     protected $connection = 'empresa_dinamica';

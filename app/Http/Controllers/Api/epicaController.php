@@ -4,19 +4,15 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\EpicaRequestCreate;
-use App\Http\Requests\loginRequest;
-use App\Http\Requests\proyectoRequest;
-use App\Models\empresaModel;
+use App\Http\Requests\EpicaRequestUpdate;
 use App\Models\EpicaModel;
-use App\Models\proyectoModel;
-use App\Models\rolModel;
-use App\Models\usuarioModel;
+use App\Models\ProyectoModel;
 use Exception;
 use Illuminate\Http\Request;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Illuminate\Support\Facades\Validator;
 
-class epicaController extends Controller
+class EpicaController extends Controller
 {
     protected $mensaje = "";
     protected $error = false;
@@ -33,23 +29,24 @@ class epicaController extends Controller
     public function getNomPrioridadAttribute(): string
     {
         $prioridades = [
-            1 => 'Crítica',
-            2 => 'Alta',
-            3 => 'Media',
-            4 => 'Baja'
+            4 => 'Crítica',
+            3 => 'Alta',
+            2 => 'Media',
+            1 => 'Baja'
         ];
 
         // Devuelve el nombre según el ID, o 'Media' por defecto si viene nulo
-        return $prioridades[$this->attributes['id_prioridad'] ?? 3] ?? 'Media';
+        return $prioridades[$this->attributes['id_prioridad'] ?? 2] ?? 'Media';
     }
-    public function consultar(Request $request)
+    public function consultar(Request $request, $id = null)
     {
         try {
-           
-            $epicas = EpicaModel::select(
+            if ($id) {
+                $epicas = EpicaModel::select(
                 'id', 
                 'nombre', 
                 'detalle', 
+                'historia',
                 'f_pentrega', 
                 'fec_fin', 
                 'f_rentrega', 
@@ -58,16 +55,53 @@ class epicaController extends Controller
                 'id_usu_creo', 
                 'id_usu_asig',
                 'id_prioridad',
-                'created_at'
-            )
-            ->with([
-                'proyecto:id,proyecto',
-                'estado:id,estado',
-                'usuarioCreo:id,nombre,email,id_rol',
-                'usuarioCreo.rol:id,rol',
-                'usuarioAsignado:id,nombre,email,id_rol',
-                'usuarioAsignado.rol:id,rol'
-            ])->get();
+                'ruta_pdf',
+                'ruta_video',
+                'created_at')
+                ->with([
+                    'proyecto:id,proyecto',
+                    'estado:id,estado',
+                    'usuarioCreo:id,nombre,email,id_rol',
+                    'usuarioCreo.rol:id,rol',
+                    'usuarioAsignado:id,nombre,email,id_rol',
+                    'usuarioAsignado.rol:id,rol'
+                ])
+                // Agrupamos las condiciones con OR para evitar mezclar lógica de filtros
+                ->where(function ($query) use ($id) {
+                    $query->where('id_usu_asig', $id) // 1. Épicas directamente asignadas a ti
+                        ->orWhereHas('tareas', function ($q) use ($id) { 
+                            // 2. O épicas que tienen al menos una tarea reasignada a ti
+                            $q->where('id_reasig', $id); // Reemplaza 'id_reasig' por la columna real en tu tabla tareas
+                        });
+                })->get();
+            
+            } else {
+                $epicas = EpicaModel::select(
+                    'id', 
+                    'nombre', 
+                    'detalle', 
+                    'f_pentrega', 
+                    'fec_fin', 
+                    'f_rentrega', 
+                    'id_proyecto', 
+                    'id_estado', 
+                    'id_usu_creo', 
+                    'id_usu_asig',
+                    'id_prioridad',
+                    'ruta_pdf',
+                    'ruta_video',
+                    'created_at'
+                )
+                ->with([
+                    'proyecto:id,proyecto',
+                    'estado:id,estado',
+                    'usuarioCreo:id,nombre,email,id_rol',
+                    'usuarioCreo.rol:id,rol',
+                    'usuarioAsignado:id,nombre,email,id_rol',
+                    'usuarioAsignado.rol:id,rol'
+                ])->get();
+            
+            }
 
             if ($epicas->isNotEmpty()) {
                 return response()->json([
@@ -84,7 +118,7 @@ class epicaController extends Controller
         } catch (Exception $e) {
             return response()->json([
                 'error' => true,
-                'mensaje' => 'Error' . $e,
+                'mensaje' => 'Error' . $e->getMessage(),
                 'data' => []
             ]);
         }
@@ -101,11 +135,24 @@ class epicaController extends Controller
             if ($busqueda) {
                 return response()->json([
                     'error' => true,
-                    'mensaje' => 'La épica ya se encuentra registra en ese proyecto.',
+                    'mensaje' => 'La épica ya se encuentra registrada en ese proyecto.',
                     'datos' => []
                 ], 200);
             }
 
+            $pathPdf = null;
+            if ($request->hasFile('archivo_pdf')) {
+                $pathPdf = $request->file('archivo_pdf')->store('epicas_pdfs', 'public');
+            }
+
+            // 3. Procesar Video si viene en la petición
+            $pathVideo = null;
+            if ($request->hasFile('archivo_video')) {
+                $pathVideo = $request->file('archivo_video')->store('epicas_videos', 'public');
+                //$data['ruta_video'] = $pathVideo;
+            }
+            
+           
             $nuevaEpica = EpicaModel::create([
                 'detalle' => $request->detalle,
                 'nombre' => $request->nombre,
@@ -113,7 +160,9 @@ class epicaController extends Controller
                 'id_estado'=> '1',
                 'id_usu_creo' => $request->id_usu_creo,
                 'id_usu_asig' => $request->id_usu_asig,
-                'activo' => 0
+                'activo' => 0,
+                'ruta_pdf'     => $pathPdf,
+                'ruta_video' => $pathVideo
             ]);
             return response()->json([
                 'error' => false,
@@ -123,55 +172,72 @@ class epicaController extends Controller
         }catch (Exception $e) {
             return response()->json([
                 'error' => true,
-                'mensaje' => 'Error' . $e,
+                'mensaje' => 'Error' . $e->getMessage(),
                 'data' => []
             ]);
         }
     }
 
-    public function editar(proyectoRequest $request)
+    public function editarHistoria(Request $request)
     {
-        $validator = Validator::make(
-        $request->all(),
-        $request->rulesEditar(),
-        $request->messagesEditar()
-    );
-
-    if ($validator->fails()) {
-        return response()->json([
-            'error' => true,
-            'errores' => $validator->errors()
-        ], 200);
-    }
         try{
-           
+            $id = $request->id_epica;
+            $epica = EpicaModel::select('id')
+            ->where('id', $id )->first();
 
-            $id = $request->id;
-
-            $proyecto = proyectoModel::with(['usuario:id,email,id_rol','usuario.rol:id,rol'])
-            ->select('id', 'proyecto', 'activo')
-            ->where('id', $id)->first();
-
-
-            if (!$proyecto) {
+            if (!$epica) {
                 return response()->json([
-                    'error' => false,
-                    'mensaje' => 'Este proyecto no se encuentra registrado en el sistema.',
+                    'error' => true,
+                    'mensaje' => 'El ID de la épica no se encuentra registrado en el sistema.'.$id,
                     'datos' => []
                 ], 200);
             }
 
-            $proyecto->update($request->validated());
+            $epica->historia = $request->historia;
+            $epica->save();
 
             return response()->json([
                 'error' => false,
                 'mensaje' => 'El registro fue editado correctamente.',
-                'data' => $proyecto
+                'data' => $epica
             ]);
         }catch (Exception $e) {
             return response()->json([
                 'error' => true,
-                'mensaje' => 'Error' . $e,
+                'mensaje' => 'Error' . $e->getMessage(),
+                'data' => []
+            ]);
+        }
+    }
+
+    public function editar(EpicaRequestUpdate $request)
+    {
+        try{
+
+            $id = $request->id;
+
+            $epica = EpicaModel::select('id')
+            ->where('id', $request->id)->first();
+
+            if (!$epica) {
+                return response()->json([
+                    'error' => true,
+                    'mensaje' => 'El ID de la épica no se encuentra registrado en el sistema.',
+                    'datos' => []
+                ], 200);
+            }
+
+            $epica->update($request->validated());
+
+            return response()->json([
+                'error' => false,
+                'mensaje' => 'El registro fue editado correctamente.',
+                'data' => $epica
+            ]);
+        }catch (Exception $e) {
+            return response()->json([
+                'error' => true,
+                'mensaje' => 'Error' . $e->getMessage(),
                 'data' => []
             ]);
         }
@@ -201,7 +267,7 @@ class epicaController extends Controller
         } catch (Exception $e) {
             return response()->json([
                 'error' => true,
-                'mensaje' => 'Error' . $e,
+                'mensaje' => 'Error' . $e->getMessage(),
                 'data' => []
             ]);
         }

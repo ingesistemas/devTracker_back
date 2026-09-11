@@ -3,19 +3,19 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\credencialesUpdateRequest;
-use App\Http\Requests\loginRequest;
-use App\Http\Requests\personalesUpdateRequest;
-use App\Http\Requests\usuarioRequest;
-use App\Http\Requests\usuarioUpdateRequest;
-use App\Models\empresaModel;
-use App\Models\usuarioModel;
+use App\Http\Requests\CredencialesUpdateRequest;
+use App\Http\Requests\LoginRequest;
+use App\Http\Requests\PersonalesUpdateRequest;
+use App\Http\Requests\UsuarioRequest;
+use App\Http\Requests\UsuarioUpdateRequest;
+/* use App\Models\empresaModel; */
+use App\Models\UsuarioModel;
 use Exception;
 use Illuminate\Http\Request;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Illuminate\Support\Facades\Hash;
 
-class usuarioController extends Controller
+class UsuarioController extends Controller
 {
     protected $mensaje = "";
     protected $error = false;
@@ -26,8 +26,8 @@ class usuarioController extends Controller
         try {
             $id_empresa = $request->id_empresa;
 
-            $usuarios = usuarioModel::with(['empresa:id,nombre,email,activo','rol:id,rol'])
-            ->select('id', 'email', 'nombre', 'activo', 'id_empresa', 'id_rol')
+            $usuarios = usuarioModel::with(['empresa:id,nombre,email,activo','rol:id,rol', 'grupoTrabajo:id,grupo'])
+            ->select('id', 'email', 'nombre', 'activo', 'id_empresa', 'id_rol', 'id_grupo_trabajo')
             ->where('id_empresa', $id_empresa)->get();
 
             if ($usuarios->isNotEmpty()) {
@@ -45,7 +45,7 @@ class usuarioController extends Controller
         } catch (Exception $e) {
             return response()->json([
                 'error' => true,
-                'mensaje' => 'Error' . $e,
+                'mensaje' => 'Error' . $e->getMessage(),
                 'data' => []
             ]);
         }
@@ -58,7 +58,7 @@ class usuarioController extends Controller
             $clave = $request->contrasena;
             $usuario = usuarioModel::with(['empresa:id,nombre,email,activo',
             'rol:id,rol'])
-                ->select('id', 'email', 'activo', 'id_empresa', 'id_rol', 'contrasena')
+                ->select('id', 'email', 'activo', 'id_empresa', 'id_rol', 'contrasena', 'id_epica', 'id_tarea')
                 ->where('email', $email)->first();
             
             if(!$usuario || !Hash::check($request->contrasena, $usuario->contrasena)){
@@ -97,6 +97,12 @@ class usuarioController extends Controller
             }
 
             if ($usuario) {
+                $conexion = "devtracker".$usuario->id;
+                config(['database.connections.empresa_dinamica.database' => $conexion]);
+                $usuario->load([
+                    'epicaActiva:id,nombre',
+                    'tareaActiva:id,detalle,fec_ini,tiempo'
+                ]);
                 $token = JWTAuth::claims([
                     'id_usuario' => $usuario->id,
                     'id_empresa' => $usuario->id_empresa,
@@ -115,7 +121,7 @@ class usuarioController extends Controller
         } catch (Exception $e) {
             return response()->json([
                 'error' => true,
-                'mensaje' => 'Error' . $e,
+                'mensaje' => 'Error' . $e->getMessage(),
                 'data' => []
             ]);
         }
@@ -145,7 +151,7 @@ class usuarioController extends Controller
         } catch (Exception $e) {
             return response()->json([
                 'error' => true,
-                'mensaje' => 'Error' . $e,
+                'mensaje' => 'Error' . $e->getMessage(),
                 'data' => []
             ]);
         }
@@ -158,6 +164,7 @@ class usuarioController extends Controller
             $email = $request->email;
             $id_rol = $request->id_rol;
             $nombre = $request->nombre;
+            $id_grupo_trabajo = $request->id_grupo_trabajo;
             $contrasena = Hash::make($request->contrasena);
 
             $busqueda = usuarioModel::with(['empresa:id,nombre,email,activo','rol:id,rol'])
@@ -172,15 +179,7 @@ class usuarioController extends Controller
                     'datos' => []
                 ], 200);
             }
-
-            $usuario = usuarioModel::create([
-                'email' => $email,
-                'nombre' => $nombre,
-                'id_rol' => $id_rol,
-                'contrasena' => $contrasena,
-                'id_empresa' => $id_empresa,
-                'activo' => 0
-            ]);
+            $usuario = usuarioModel::create($request->validated());
             $usuario->makeHidden('contrasena');
             return response()->json([
                 'error' => false,
@@ -190,7 +189,7 @@ class usuarioController extends Controller
         }catch (Exception $e) {
             return response()->json([
                 'error' => true,
-                'mensaje' => 'Error' . $e,
+                'mensaje' => 'Error' . $e->getMessage(),
                 'data' => []
             ]);
         }
@@ -203,7 +202,7 @@ class usuarioController extends Controller
              $id = $request->id;
 
             $usuario = usuarioModel::with(['empresa:id,nombre,email,activo','rol:id,rol'])
-            ->select('id', 'email', 'activo', 'id_empresa', 'id_rol')
+            ->select('id', 'email', 'activo', 'id_empresa', 'id_rol', 'id_grupo_trabajo')
             ->where('id_empresa', $id_empresa)
             ->where('id', $id)->first();
 
@@ -225,7 +224,7 @@ class usuarioController extends Controller
         }catch (Exception $e) {
             return response()->json([
                 'error' => true,
-                'mensaje' => 'Error' . $e,
+                'mensaje' => 'Error' . $e->getMessage(),
                 'data' => []
             ]);
         }
@@ -260,7 +259,7 @@ class usuarioController extends Controller
         }catch (Exception $e) {
             return response()->json([
                 'error' => true,
-                'mensaje' => 'Error' . $e,
+                'mensaje' => 'Error' . $e->getMessage(),
                 'data' => []
             ]);
         }
@@ -290,7 +289,7 @@ class usuarioController extends Controller
         } catch (Exception $e) {
             return response()->json([
                 'error' => true,
-                'mensaje' => 'Error' . $e,
+                'mensaje' => 'Error' . $e->getMessage(),
                 'data' => []
             ]);
         }
@@ -334,7 +333,7 @@ class usuarioController extends Controller
         }catch (Exception $e) {
             return response()->json([
                 'error' => true,
-                'mensaje' => 'Error' . $e,
+                'mensaje' => 'Error' . $e->getMessage(),
                 'data' => []
             ]);
         }

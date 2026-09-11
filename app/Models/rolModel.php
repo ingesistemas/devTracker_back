@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class rolModel extends Model
+class RolModel extends Model
 {
     protected $table = 'roles';
     protected $connection = 'mysql';

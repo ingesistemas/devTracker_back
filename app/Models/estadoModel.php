@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class estadoModel extends Model
+class EstadoModel extends Model
 {
     protected $table = 'estados';
     protected $connection = 'mysql';

@@ -1,9 +1,11 @@
 <?php
 
-use App\Http\Controllers\Api\epicaController;
-use App\Http\Controllers\Api\proyectoController;
-use App\Http\Controllers\Api\rolController;
-use App\Http\Controllers\Api\usuarioController;
+use App\Http\Controllers\Api\EpicaController;
+use App\Http\Controllers\Api\GrupoTrabajoController;
+use App\Http\Controllers\Api\ProyectoController;
+use App\Http\Controllers\Api\RolController;
+use App\Http\Controllers\Api\TareaController;
+use App\Http\Controllers\Api\UsuarioController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -45,25 +47,41 @@ Route::middleware('jwt')->group(function () {
         Route::post('/usuarios/editar-personales', [ UsuarioController::class,'editarPersonales']);
 
         Route::prefix('epicas')->group(function () {
-            Route::get('/consultar', [epicaController::class, 'consultar']);
-            Route::post('/crear', [epicaController::class, 'crear']);
+            Route::get('/consultar', [EpicaController::class, 'consultar']);
+            Route::get('/programar/{id?}', [EpicaController::class, 'consultar']);
+            Route::post('/crear', [EpicaController::class, 'crear']);
+            Route::post('/editar', [EpicaController::class, 'editar']);
+            Route::post('/editar-historia', [EpicaController::class, 'editarHistoria']);
            /*  Route::get('/consultar', [rolController::class, 'consultar']);
             Route::post('/crear', [rolController::class, 'crear']); */
         });
 
+        Route::prefix('tareas')->group(function () {
+            Route::get('/consultar/{id?}/{id_epica}', [TareaController::class, 'consultar']);
+            Route::post('/crear', [TareaController::class, 'crear']);
+            Route::post('/cronometro', [TareaController::class, 'cronometro']);
+        });
+
         Route::prefix('proyectos')->group(function () {
-            Route::get('/consultar', [proyectoController::class, 'consultar']);
-            Route::post('/crear', [proyectoController::class, 'crear']); 
-            Route::post('/editar', [proyectoController::class, 'editar']); 
-            Route::post('/estado', [proyectoController::class, 'estado']); 
+            Route::get('/consultar', [ProyectoController::class, 'consultar']);
+            Route::post('/crear', [ProyectoController::class, 'crear']); 
+            Route::post('/editar', [ProyectoController::class, 'editar']); 
+            Route::post('/estado', [ProyectoController::class, 'estado']); 
+        });
+
+        Route::prefix('grupos')->group(function () {
+            Route::get('/consultar', [GrupoTrabajoController::class, 'consultar']);
+            Route::post('/crear', [GrupoTrabajoController::class, 'crear']); 
+            Route::post('/editar', [GrupoTrabajoController::class, 'editar']); 
+            Route::post('/estado', [GrupoTrabajoController::class, 'estado']); 
         });
         
         
     });
 
     Route::prefix('roles')->group(function () {
-        Route::get('/consultar', [rolController::class, 'consultar']);
-        Route::post('/crear', [rolController::class, 'crear']);
+        Route::get('/consultar', [RolController::class, 'consultar']);
+        Route::post('/crear', [RolController::class, 'crear']);
         
         /*Route::post('/', [RoleController::class, 'crear']);
         Route::get('/{id}', [RoleController::class, 'show']);

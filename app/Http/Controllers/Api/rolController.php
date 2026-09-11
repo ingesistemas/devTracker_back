@@ -3,15 +3,15 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\loginRequest;
-use App\Models\empresaModel;
-use App\Models\rolModel;
-use App\Models\usuarioModel;
+/* use App\Http\Requests\loginRequest;
+use App\Models\empresaModel; */
+use App\Models\RolModel;
+/* use App\Models\usuarioModel; */
 use Exception;
 use Illuminate\Http\Request;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
-class rolController extends Controller
+class RolController extends Controller
 {
     protected $mensaje = "";
     protected $error = false;
