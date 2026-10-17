@@ -10,6 +10,7 @@ class EstadoModel extends Model
     protected $connection = 'mysql';
     protected $fillable = [
         'estado',
+        'detalle',
         'created_at'
     ];
 

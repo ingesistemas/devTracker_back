@@ -27,6 +27,7 @@ class TareaRequestUpdate extends FormRequest
         return [
             'id' => 'required',
             'id_epica' => 'required',
+            'nombre' => 'required',
             'detalle' => 'required',
             'f_pentrega' => 'required',
             'id_estado' => 'required',

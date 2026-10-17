@@ -58,7 +58,7 @@ class UsuarioController extends Controller
             $clave = $request->contrasena;
             $usuario = usuarioModel::with(['empresa:id,nombre,email,activo',
             'rol:id,rol'])
-                ->select('id', 'email', 'activo', 'id_empresa', 'id_rol', 'contrasena', 'id_epica', 'id_tarea')
+                ->select('id', 'email', 'activo', 'id_empresa', 'id_rol', 'contrasena', 'id_epica', 'id_tarea', 'tiempo')
                 ->where('email', $email)->first();
             
             if(!$usuario || !Hash::check($request->contrasena, $usuario->contrasena)){
@@ -97,7 +97,7 @@ class UsuarioController extends Controller
             }
 
             if ($usuario) {
-                $conexion = "devtracker".$usuario->id;
+                $conexion = "devtracker".$usuario->id_empresa;
                 config(['database.connections.empresa_dinamica.database' => $conexion]);
                 $usuario->load([
                     'epicaActiva:id,nombre',
@@ -237,7 +237,7 @@ class UsuarioController extends Controller
             $id = $request->id;
 
             $usuario = usuarioModel::with(['empresa:id,nombre,email,activo','rol:id,rol'])
-            ->select('id', 'email', 'activo', 'id_empresa', 'id_rol')
+            ->select('id', 'email', 'activo', 'id_empresa', 'id_rol', 'id_grupo_trabajo')
             ->where('id_empresa', $id_empresa)
             ->where('id', $id)->first();
 

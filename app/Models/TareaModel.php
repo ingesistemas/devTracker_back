@@ -17,6 +17,8 @@ class TareaModel extends Model
         'fec_fin'   => 'datetime'
     ];
     protected $fillable = [
+        'nombre',
+        'orden',
         'detalle',
         'id_epica',
         'f_pentrega',
@@ -29,6 +31,7 @@ class TareaModel extends Model
         'id_prioridad',
         'id_complejidad',
         'id_reasig',
+        'calidad',
         'id_usu_creo', 
         'activo'
     ];
@@ -75,7 +78,7 @@ class TareaModel extends Model
     public function getNomComplejidadAttribute(): string
     {
         $complejidades = [
-            4 => 'Compleja',
+            4 => 'Muy alta',
             3 => 'Alta',
             2 => 'Media',
             1 => 'Baja'
@@ -92,5 +95,15 @@ class TareaModel extends Model
     {
         // Una tarea puede estar seleccionada como "activa" por muchos usuarios
         return $this->hasMany(UsuarioModel::class, 'id_tarea', 'id');
+    }
+
+    public function observaciones()
+    {
+        return $this->hasMany(ObservacionModel::class, 'id_tarea', 'id');
+    }
+
+    public function historiales()
+    {
+        return $this->hasMany(HistorialTareaModel::class, 'id_tarea', 'id');
     }
 }

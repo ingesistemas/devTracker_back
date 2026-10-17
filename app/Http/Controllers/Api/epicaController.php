@@ -38,8 +38,7 @@ class EpicaController extends Controller
         // Devuelve el nombre según el ID, o 'Media' por defecto si viene nulo
         return $prioridades[$this->attributes['id_prioridad'] ?? 2] ?? 'Media';
     }
-    public function consultar(Request $request, $id = null)
-    {
+    public function consultar(Request $request, $id = null){
         try {
             if ($id) {
                 $epicas = EpicaModel::select(
@@ -63,8 +62,14 @@ class EpicaController extends Controller
                     'estado:id,estado',
                     'usuarioCreo:id,nombre,email,id_rol',
                     'usuarioCreo.rol:id,rol',
-                    'usuarioAsignado:id,nombre,email,id_rol',
-                    'usuarioAsignado.rol:id,rol'
+                    'usuarioAsignado:id,nombre,email,id_rol,id_grupo_trabajo',
+                    'usuarioAsignado.rol:id,rol',
+                    'usuarioAsignado.grupoTrabajo:id,grupo',
+                    'tareas:id,nombre,id_epica,id_prioridad,calidad,id_complejidad,id_estado,created_at,id_usu_creo',
+                    'tareas.observaciones:id,id_tarea,id_usuario,observacion,created_at',
+                    'tareas.observaciones.creador:id,nombre,email',
+                    'tareas.estado:id,estado',
+                    'tareas.usuarioCreo:id,nombre,email',
                 ])
                 // Agrupamos las condiciones con OR para evitar mezclar lógica de filtros
                 ->where(function ($query) use ($id) {
@@ -97,10 +102,144 @@ class EpicaController extends Controller
                     'estado:id,estado',
                     'usuarioCreo:id,nombre,email,id_rol',
                     'usuarioCreo.rol:id,rol',
-                    'usuarioAsignado:id,nombre,email,id_rol',
-                    'usuarioAsignado.rol:id,rol'
+                    'usuarioAsignado:id,nombre,email,id_rol,id_grupo_trabajo',
+                    'usuarioAsignado.rol:id,rol',
+                    'usuarioAsignado.grupoTrabajo:id,grupo',
+                    'tareas:id,nombre,id_epica,id_prioridad,id_complejidad,id_estado,created_at,id_usu_creo',
+                    'tareas.observaciones:id,id_tarea,id_usuario,observacion,created_at',
+                    'tareas.observaciones.creador:id,nombre,email',
+                    'tareas.estado:id,estado',
+                    'tareas.usuarioCreo:id,nombre,email',
                 ])->get();
             
+            }
+
+            if ($epicas->isNotEmpty()) {
+                return response()->json([
+                    'error' => false,
+                    'mensaje' => 'Épicas encontradas.',
+                    'datos' => $epicas
+                ], 200);
+            }
+
+            return response()->json([
+                'error' => true,
+                'mensaje' => 'No se encontraron datos.'
+            ], 200);
+        } catch (Exception $e) {
+            return response()->json([
+                'error' => true,
+                'mensaje' => 'Error' . $e->getMessage(),
+                'data' => []
+            ]);
+        }
+    }
+
+    public function consultarQa(Request $request, $id = null){
+        $id_estado = $request->id_estado;
+        
+        try {
+            if ($id) {
+                $epicas = EpicaModel::select(
+                    'id', 
+                    'nombre', 
+                    'detalle', 
+                    'historia',
+                    'f_pentrega', 
+                    'fec_fin', 
+                    'f_rentrega', 
+                    'id_proyecto', 
+                    'id_estado', 
+                    'id_usu_creo', 
+                    'id_usu_asig',
+                    'id_prioridad',
+                    'calidad',
+                    'ruta_pdf',
+                    'ruta_video',
+                    'created_at'
+                )
+                ->with([
+                    'proyecto:id,proyecto',
+                    'estado:id,estado',
+                    'usuarioCreo:id,nombre,email,id_rol',
+                    'usuarioCreo.rol:id,rol',
+                    'usuarioAsignado:id,nombre,email,id_rol,id_grupo_trabajo',
+                    'usuarioAsignado.rol:id,rol',
+                    'usuarioAsignado.grupoTrabajo:id,grupo',
+                    
+                    // Relación de tareas (filtrada por el estado que necesitas)
+                    'tareas' => function ($q) use ($id_estado) {
+                        $q->select('id', 'nombre', 'id_epica', 'id_prioridad', 'id_complejidad', 'id_estado', 'created_at', 'id_usu_creo')
+                        ->where('id_estado', $id_estado); 
+                    },
+                    
+                    // Relaciones que cuelgan de las tareas (¡Aquí SÍ vive historiales y observaciones!)
+                    'tareas.observaciones:id,id_tarea,id_usuario,observacion,created_at',
+                    'tareas.observaciones.creador:id,nombre,email',
+                    'tareas.estado:id,estado',
+                    'tareas.usuarioCreo:id,nombre,email',
+                    'tareas.historiales:id,id_tarea,detalle,ruta_pdf,ruta_video,id_estado_ini,id_estado_fin,id_usuario,created_at',
+                    'tareas.historiales.creador:id,nombre',
+                    'tareas.historiales.estadoInicial:id,estado',
+                    'tareas.historiales.estadoFinal:id,estado'
+                ])
+                ->where(function ($query) use ($id, $id_estado) {
+                    $query->where(function ($sub) use ($id) {
+                            $sub->where('id_usu_asig', $id)
+                                ->orWhereHas('tareas', function ($q) use ($id) { 
+                                    $q->where('id_reasig', $id);
+                                });
+                        })
+                        ->whereHas('tareas', function ($q) use ($id_estado) {
+                            $q->where('id_estado', $id_estado);
+                        });
+                })
+                ->get();
+            
+            } else {
+                $epicas = EpicaModel::select(
+                'id', 
+                'nombre', 
+                'detalle', 
+                'f_pentrega', 
+                'fec_fin', 
+                'f_rentrega', 
+                'id_proyecto', 
+                'id_estado', 
+                'id_usu_creo', 
+                'id_usu_asig',
+                'id_prioridad',
+                'ruta_pdf',
+                'ruta_video',
+                'created_at'
+                )
+                ->with([
+                    'proyecto:id,proyecto',
+                    'estado:id,estado',
+                    'usuarioCreo:id,nombre,email,id_rol',
+                    'usuarioCreo.rol:id,rol',
+                    'usuarioAsignado:id,nombre,email,id_rol',
+                    'usuarioAsignado.rol:id,rol',
+                
+                    // Relación de tareas (filtrada por el estado que necesitas)
+                    'tareas' => function ($q) use ($id_estado) {
+                        $q->select('id', 'nombre', 'id_epica', 'id_prioridad', 'id_complejidad', 'id_estado', 'created_at', 'id_usu_creo')
+                        ->where('id_estado', $id_estado); 
+                    },
+                    
+                    // Relaciones que cuelgan de las tareas
+                    'tareas.observaciones:id,id_tarea,id_usuario,observacion,created_at',
+                    'tareas.observaciones.creador:id,nombre,email',
+                    'tareas.estado:id,estado',
+                    'tareas.usuarioCreo:id,nombre,email',
+                    'tareas.historiales:id,id_tarea,detalle,ruta_pdf,ruta_video,id_estado_ini,id_estado_fin,id_usuario,created_at',
+                    'tareas.historiales.creador:id,nombre',
+                    'tareas.historiales.estadoInicial:id,estado',
+                    'tareas.historiales.estadoFinal:id,estado'
+                ])
+                ->whereHas('tareas', function ($q) use ($id_estado) {
+                    $q->where('id_estado', $id_estado);
+                })->get();            
             }
 
             if ($epicas->isNotEmpty()) {
@@ -233,17 +372,17 @@ class EpicaController extends Controller
                 'error' => false,
                 'mensaje' => 'El registro fue editado correctamente.',
                 'data' => $epica
-            ]);
+            ], 200);
         }catch (Exception $e) {
             return response()->json([
                 'error' => true,
                 'mensaje' => 'Error' . $e->getMessage(),
                 'data' => []
-            ]);
+            ], 500);
         }
     }
 
-    public function estado(Request $request)
+    /* public function estado(Request $request)
     {
         try{
             $id = $request->id;
@@ -270,6 +409,40 @@ class EpicaController extends Controller
                 'mensaje' => 'Error' . $e->getMessage(),
                 'data' => []
             ]);
+        }
+    } */
+
+    public function eliminar(Request $request){
+        try {
+            $id = $request->id;
+
+            // 1. Buscar la tarea por ID
+            $epica = EpicaModel::find($id);
+
+            // 2. Si la tarea NO existe en la base de datos
+            if (!$epica) {
+                return response()->json([
+                    'error' => true,
+                    'mensaje' => 'No se encontró la épica registrada en el sistema.',
+                    'datos' => []
+                ], 404);
+            }
+
+            // 4. Si existe y NO tiene tiempo, se elimina la instancia devuelta en $tarea
+            $epica->delete();
+
+            return response()->json([
+                'error' => false,
+                'mensaje' => 'Epica eliminada correctamente.',
+                'datos' => []
+            ], 200);
+
+        } catch (\Throwable $e) { // Usar \Throwable para capturar tanto Exception como Error de PHP
+            return response()->json([
+                'error' => true,
+                'mensaje' => 'Error: ' . $e->getMessage(),
+                'datos' => []
+            ], 500);
         }
     }
 }

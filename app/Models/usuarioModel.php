@@ -22,6 +22,7 @@ class UsuarioModel extends Model implements JWTSubject
         'id_grupo_trabajo',
         'id_epica',
         'id_tarea',
+        'tiempo',
         'activo',
         'created_at'
     ];
