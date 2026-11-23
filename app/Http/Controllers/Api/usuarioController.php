@@ -101,7 +101,7 @@ class UsuarioController extends Controller
                 config(['database.connections.empresa_dinamica.database' => $conexion]);
                 $usuario->load([
                     'epicaActiva:id,nombre',
-                    'tareaActiva:id,detalle,fec_ini,tiempo'
+                    'tareaActiva:id,nombre,detalle,fec_ini,tiempo'
                 ]);
                 $token = JWTAuth::claims([
                     'id_usuario' => $usuario->id,

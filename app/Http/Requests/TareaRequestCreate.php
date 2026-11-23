@@ -42,7 +42,7 @@ class TareaRequestCreate extends FormRequest
         return [
             'id_epica.required' => 'Falta señalar la épica a la cual pertenece la tarea.',
             'detalle.required' => 'Falta ingresar el detalle de la tarea.',
-            'f_pentrega.required' => 'La ingresar la fecha estimada de la entrega.',
+            'f_pentrega.required' => 'Falta ingresar la fecha estimada de la entrega.',
             'id_estado.required' => 'Falta señalar el estado de la tarea.',
             'id_usu_creo.required' => 'El señalar el usuario quién crea la tarea.',
             'id_reasig.required' => 'El señalar el usuario a quién se le asigna la tarea.',

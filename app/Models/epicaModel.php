@@ -30,6 +30,7 @@ class EpicaModel extends Model
         'id_prioridad',
         'ruta_pdf',
         'ruta_video',
+        'historia',
         'modelo'
     ];
 
@@ -39,6 +40,10 @@ class EpicaModel extends Model
     {
         // Reemplaza 'id_epica' si la llave foránea en la tabla tareas tiene otro nombre
         return $this->hasMany(TareaModel::class, 'id_epica', 'id');
+    }
+
+    public function requisitos(){
+        return $this->hasMany(RequisitoModel::class, 'id_epica', 'id');
     }
     
     // Accessor para devolver la URL completa

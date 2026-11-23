@@ -30,9 +30,16 @@ class EpicaRequestUpdate extends FormRequest
             'detalle' => 'required',
             'id_proyecto' => 'required|integer|exists:empresa_dinamica.proyectos,id',
             'id_usu_creo' => 'required|integer|exists:mysql.usuarios,id',
-            'id_usu_asig'  => 'required|integer|exists:mysql.usuarios,id',
+            'id_usu_asig'  => 'nullable|integer|exists:mysql.usuarios,id',
             'id_prioridad'  => 'required|integer'
         ];
+    }
+
+    protected function prepareForValidation()
+    {
+        $this->merge([
+            'id_usu_asig' => $this->id_usu_asig ?: null,
+        ]);
     }
 
     public function messages(): array
@@ -46,7 +53,6 @@ class EpicaRequestUpdate extends FormRequest
             'id_usu_creo.exists' => 'El usuario no se encuentra registrado en el sistema.',
             'id_usu_creo.required' => 'Falta señalar el usuario quién crea la épica.',
             'id_usu_asig.exists' => 'El usuario a quién asigna la épica, no se encuentra registrado en el sistema.',
-            'id_usu_asig.required' => 'Falta señalar el usuario a quién le asigna la épica.',
             'id_prioridad' => 'Falta indicar el tipo de prioridad que tiene la épica o requerimiento.'
         ];
     }

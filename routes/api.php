@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\EpicaController;
 use App\Http\Controllers\Api\EstadoController;
 use App\Http\Controllers\Api\GrupoTrabajoController;
 use App\Http\Controllers\Api\ProyectoController;
+use App\Http\Controllers\Api\RequisitoEpicaController;
 use App\Http\Controllers\Api\RolController;
 use App\Http\Controllers\Api\TareaController;
 use App\Http\Controllers\Api\UsuarioController;
@@ -58,6 +59,18 @@ Route::middleware('jwt')->group(function () {
             Route::post('/editar', [EpicaController::class, 'editar']);
             Route::post('/editar-historia', [EpicaController::class, 'editarHistoria']);
             Route::post('/eliminar', [EpicaController::class, 'eliminar']);
+            Route::post('/PDFEpicas', [EpicaController::class, 'generarPdfEpicas']);
+           /*  Route::get('/consultar', [rolController::class, 'consultar']);
+            Route::post('/crear', [rolController::class, 'crear']); */
+        });
+
+        Route::prefix('requisitos')->group(function () {
+            Route::POST('/consultar', [RequisitoEpicaController::class, 'consultar']);
+            Route::post('/crear', [RequisitoEpicaController::class, 'crear']);
+            Route::post('/editar', [RequisitoEpicaController::class, 'editar']);
+            Route::post('/eliminar', [RequisitoEpicaController::class, 'eliminar']);
+            Route::post('/agregar-tarea', [RequisitoEpicaController::class, 'crearRequisitoTarea']);
+            Route::post('/eliminar-tarea', [RequisitoEpicaController::class, 'eliminarRequisitoTarea']);
            /*  Route::get('/consultar', [rolController::class, 'consultar']);
             Route::post('/crear', [rolController::class, 'crear']); */
         });

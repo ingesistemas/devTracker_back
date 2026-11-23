@@ -30,6 +30,7 @@ class TareaModel extends Model
         'cronometro',
         'id_prioridad',
         'id_complejidad',
+        'hrs_estimadas',
         'id_reasig',
         'calidad',
         'id_usu_creo', 
@@ -105,5 +106,33 @@ class TareaModel extends Model
     public function historiales()
     {
         return $this->hasMany(HistorialTareaModel::class, 'id_tarea', 'id');
+    }
+
+    public function requisito()
+    {
+        return $this->belongsTo(RequisitoModel::class, 'id_requisito', 'id');
+    }
+
+    public function requisitoTareas()
+    {
+        return $this->hasMany(RequisitoTareaModel::class, 'id_tarea', 'id');
+    }
+
+    public function historialAsignaciones()
+    {
+        return $this->hasMany(AsignacionHistorialModel::class, 'id_tarea', 'id');
+    }
+
+    public function ultimaAsignacion()
+{
+    return $this->hasOne(AsignacionHistorialModel::class, 'id_tarea', 'id')
+        ->select(
+            'historial_asignaciones.id',
+            'historial_asignaciones.id_tarea',
+            'historial_asignaciones.id_usu_creo',
+            'historial_asignaciones.id_reasig',
+            'historial_asignaciones.created_at'
+        )
+        ->latestOfMany('id');
     }
 }

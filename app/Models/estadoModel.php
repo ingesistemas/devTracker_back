@@ -11,6 +11,7 @@ class EstadoModel extends Model
     protected $fillable = [
         'estado',
         'detalle',
+        'permiso',
         'created_at'
     ];
 

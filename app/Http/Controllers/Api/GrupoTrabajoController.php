@@ -97,7 +97,6 @@ class GrupoTrabajoController extends Controller
 
     public function editar(grupoTrabajoRequestUpdate $request)
     {
-       
         try{
            
             $id = $request->id;

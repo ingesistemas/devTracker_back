@@ -5,10 +5,12 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\TareaRequestCreate;
 use App\Http\Requests\TareaRequestUpdate;
+use App\Models\AsignacionHistorialModel;
 use App\Models\EpicaModel;
 use App\Models\HistorialTareaModel;
 use App\Models\ObservacionModel;
 use App\Models\ProyectoModel;
+use App\Models\RequisitoTareaModel;
 use App\Models\TareaModel;
 use App\Models\UsuarioModel;
 use Carbon\Carbon;
@@ -73,6 +75,8 @@ class TareaController extends Controller
                 'id_reasig',
                 'id_prioridad',
                 'id_complejidad',
+                'hrs_estimadas',
+                'hrs_pruebas',
                 'activo',
                 'cronometro',
                 'calidad',
@@ -93,7 +97,9 @@ class TareaController extends Controller
                 'historiales:id,detalle,id_tarea,id_estado_ini,ruta_pdf,ruta_video,id_estado_fin,id_usuario,created_at',
                 'historiales.creador:id,nombre',
                 'historiales.estadoInicial:id,estado',
-                'historiales.estadoFinal:id,estado'
+                'historiales.estadoFinal:id,estado',
+                'requisitoTareas.tarea:id,nombre', 
+                'requisitoTareas.requisito:id,requisito'
             ])
             ->where('id_epica', $id_epica) // Filtra primero por la épica seleccionada
             ->where(function ($query) use ($id) {
@@ -127,7 +133,7 @@ class TareaController extends Controller
         try{
             $busqueda = TareaModel::select('id','id_epica')
             ->where('id_epica', $request->id_epica)
-            ->where('detalle', $request->detalle)->first();
+            ->where('nombre', $request->nombre)->first();
 
             if ($busqueda) {
                 return response()->json([
@@ -148,6 +154,7 @@ class TareaController extends Controller
                 'id_usu_creo' => $request->id_usu_creo,
                 'id_reasig' => $request->id_reasig,
                 'calidad' => $request->calidad,
+                'hrs_estimadas' => $request->hrs_estimadas,
                 'activo' => 0,
                 'cronometro' => 0,
                 'tiempo' => 0
@@ -197,40 +204,64 @@ class TareaController extends Controller
         }
     }
 
-    public function editar(TareaRequestUpdate $request){
-        try{
+    public function editar(TareaRequestUpdate $request)
+    {
+        try {
+            $tareaT = DB::connection('empresa_dinamica')->transaction(function () use ($request) {
+                $id = $request->id;
 
-            $id = $request->id;
-            $tarea = TareaModel::select('id', 'nombre', 'detalle', 'f_pentrega', 'id_estado', 'id_reasig', 
-            'id_complejidad', 'id_prioridad')->where('id', $id)->first();
-          
-            if (!$tarea) {
+                $tarea = TareaModel::select(
+                    'id',
+                    'nombre',
+                    'detalle',
+                    'f_pentrega',
+                    'id_estado',
+                    'id_reasig',
+                    'id_complejidad',
+                    'id_prioridad',
+                    'calidad',
+                    'hrs_estimadas'
+                )->where('id', $id)->first();
+
+                if (!$tarea) {
+                    return response()->json([
+                        'error' => true,
+                        'mensaje' => 'El ID de la tarea no se encuentra registrado en el sistema.',
+                        'datos' => []
+                    ], 200);
+                }
+
+                if ((int) $tarea->id_reasig !== (int) $request->id_reasig) {
+                    AsignacionHistorialModel::create([
+                        'id_tarea' => $id,
+                        'id_usu_creo' => $request->id_usu_creo ?? auth()->$id(),
+                        'id_reasig' => $request->id_reasig
+                    ]);
+                }
+
+                $tarea->nombre = $request->nombre;
+                $tarea->detalle = $request->detalle;
+                $tarea->f_pentrega = $request->f_pentrega;
+                $tarea->id_reasig = $request->id_reasig;
+                $tarea->id_complejidad = $request->id_complejidad;
+                $tarea->id_prioridad = $request->id_prioridad;
+                $tarea->calidad = $request->calidad;
+                $tarea->hrs_estimadas = $request->hrs_estimadas;
+
+                $tarea->save();
+
                 return response()->json([
-                    'error' => true,
-                    'mensaje' => 'El ID de la tarea no se encuentra registrado en el sistema.',
-                    'datos' => []
-                ], 200);
-            }            
-            $tarea->nombre = $request->nombre;
-            $tarea->detalle = $request->detalle;
-            $tarea->f_pentrega = $request->f_pentrega;
-            $tarea->id_reasig = $request->id_reasig;
-            $tarea->id_complejidad = $request->id_complejidad;
-            $tarea->id_prioridad = $request->id_prioridad;
-            $tarea->calidad = $request->calidad;
+                    'error' => false,
+                    'mensaje' => 'El registro fue editado correctamente.',
+                    'data' => $tarea
+                ]);
+            });
 
-           /*  $tarea->update($request->validated()); */
-            $tarea->save();
-
-            return response()->json([
-                'error' => false,
-                'mensaje' => 'El registro fue editado correctamente.',
-                'data' => $tarea
-            ]);
-        }catch (Exception $e) {
+            return $tareaT;
+        } catch (\Exception $e) {
             return response()->json([
                 'error' => true,
-                'mensaje' => 'Error' . $e->getMessage(),
+                'mensaje' => 'Error: ' . $e->getMessage(),
                 'data' => []
             ]);
         }
@@ -340,7 +371,7 @@ class TareaController extends Controller
             $id_estado_fin = $request->id_estado;
             $id_usuario = $request->id_usuario;
 
-            $tarea = DB::transaction(function () use ($id, $id_estado, $id_tarea, $id_estado_fin, $id_usuario) {
+            $tarea = DB::connection('empresa_dinamica')->transaction(function () use ($id, $id_estado, $id_tarea, $id_estado_fin, $id_usuario){
                 $buscarTarea = TareaModel::find($id);
 
                 if (!$buscarTarea) {
@@ -354,12 +385,18 @@ class TareaController extends Controller
                 $buscarTarea->id_estado = $id_estado;
                 $buscarTarea->save();
 
+                if ($id_estado != '4') {
+                    // Actualiza de forma masiva todos los registros en la tabla pivote que tengan este id_tarea
+                    RequisitoTareaModel::where('id_tarea', $id)
+                        ->update(['checked_id' => $id_estado]);
+                }
+
                 $historial = HistorialTareaModel::create([
                     'id_tarea' => $id,
                     'id_estado_ini' => $id_estado_ini,
                     'id_estado_fin' => $id_estado_fin,
                     'id_usuario' => $id_usuario
-                ]);
+                ]);                                   
 
                 return response()->json([
                     'error' => false,
@@ -397,7 +434,7 @@ class TareaController extends Controller
                 //$data['ruta_video'] = $pathVideo;
             }
 
-            $tarea = DB::transaction(function () use ($id, $id_estado, $id_tarea, $detalle, $id_estado_fin, $id_usuario, $pathPdf, $pathVideo) {
+            $tarea = DB::connection('empresa_dinamica')->transaction(function () use ($id, $id_estado, $id_tarea, $detalle, $id_estado_fin, $id_usuario, $pathPdf, $pathVideo){
                 $buscarTarea = TareaModel::find($id_tarea);
 
                 if (!$buscarTarea) {
@@ -420,6 +457,12 @@ class TareaController extends Controller
                     'ruta_pdf'     => $pathPdf,
                     'ruta_video' => $pathVideo
                 ]);
+
+                if ($id_estado == '4') {
+                    // Actualiza de forma masiva todos los registros en la tabla pivote que tengan este id_tarea
+                    RequisitoTareaModel::where('id_tarea', $id_tarea)
+                        ->update(['checked_id' => $id_estado]);
+                } 
 
                 return response()->json([
                     'error' => false,
@@ -521,8 +564,8 @@ class TareaController extends Controller
             $idUsuario = $request->id_reasig;
             $cronometro = $request->cronometro ? 0 : 1;
             $id_epica = $request->input('epica.id');
-            $tarea = DB::transaction(function () use ($id, $idUsuario, $cronometro, $id_epica) {
-                $tareaAnterior = TareaModel::select('id', 'fec_inicio', 'fec_ini', 'fec_fin', 'cronometro', 'tiempo')
+            $tarea = DB::connection('empresa_dinamica')->transaction(function () use ($id, $idUsuario, $cronometro, $id_epica){
+                $tareaAnterior = TareaModel::select('id', 'fec_inicio', 'fec_ini', 'fec_fin', 'cronometro', 'tiempo', 'id_estado')
                 ->where('id_reasig', $idUsuario)
                 ->where('cronometro', 1)
                 ->first(); 
@@ -532,7 +575,7 @@ class TareaController extends Controller
                     ->update(['cronometro' => 0]);
 
                 // 2. Buscar la tarea objetivo
-                $tareaEncontrada = TareaModel::select('id', 'cronometro', 'tiempo', 'fec_ini', 'fec_fin')
+                $tareaEncontrada = TareaModel::select('id', 'cronometro', 'tiempo', 'fec_ini', 'fec_fin', 'id_estado')
                     ->where('id', $id)
                     ->where('id_reasig', $idUsuario)
                     ->first();
@@ -549,6 +592,7 @@ class TareaController extends Controller
                 $fecIni = now();
                 $tareaEncontrada->fec_ini = $fecIni;
                 $tareaEncontrada->cronometro = $cronometro;
+                $tareaEncontrada->id_estado = 2;
                 if($tareaEncontrada->fec_inicio == null){
                         $tareaEncontrada->fec_inicio = $fecIni;
                     }
@@ -558,6 +602,7 @@ class TareaController extends Controller
                     $fecIni = Carbon::parse($tareaAnterior->fec_ini);
                     $tareaAnterior->fec_fin = $fecFin;
                     $tareaAnterior->cronometro = 0;
+                    $tareaAnterior->id_estado = 7;
                     $minutosActuales = $fecIni->diffInMinutes($fecFin);
                     $tareaAnterior->tiempo = (($tareaAnterior->tiempo ?? 0) + $minutosActuales);
                     
@@ -638,7 +683,7 @@ class TareaController extends Controller
 
     public function reordenarTareas(Request $request) {
         $posiciones = $request->input('tareas', []); 
-        DB::transaction(function () use ($posiciones) {
+        DB::connection('empresa_dinamica')->transaction(function () use ($posiciones){
             foreach ($posiciones as $pos) {
                 if (isset($pos['id'], $pos['orden'])) {
                     TareaModel::where('id', $pos['id'])->update(['orden' => $pos['orden']]);
